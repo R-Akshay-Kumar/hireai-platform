@@ -7,7 +7,7 @@ import {
   FaForward,
   FaMicrophone,
 } from "react-icons/fa";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const MockInterview = () => {
   // --- STATE ---
@@ -27,6 +27,7 @@ const MockInterview = () => {
   const [aiSpeaking, setAiSpeaking] = useState(false);
 
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Proctored Logic
   const [violations, setViolations] = useState(0);
@@ -545,7 +546,7 @@ const MockInterview = () => {
             </div>
 
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => navigate('/dashboard')}
               className="w-full py-4 bg-gray-900 text-white rounded-lg font-bold hover:bg-black transition"
             >
               Back to Dashboard
