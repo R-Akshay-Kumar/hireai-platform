@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import API from '../../api';
 import { Link } from 'react-router-dom';
 import { FaBriefcase, FaMapMarkerAlt, FaMoneyBillWave, FaArrowRight } from 'react-icons/fa';
 
@@ -14,7 +14,7 @@ const JobBoard = () => {
 
   const fetchJobs = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/jobs/all');
+      const res = await API.get('/jobs/all');
       setJobs(res.data);
     } catch (err) {
       console.error(err);

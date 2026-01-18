@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import API from '../../api'; 
 
 const PostJob = () => {
   const [formData, setFormData] = useState({
@@ -23,7 +23,8 @@ const PostJob = () => {
     const user = JSON.parse(localStorage.getItem('user'));
 
     try {
-      await axios.post('http://localhost:5000/api/jobs/post', {
+      // <--- 2. UPDATED: API.post() with relative path
+      await API.post('/jobs/post', {
         ...formData,
         recruiterId: user._id || user.id
       });

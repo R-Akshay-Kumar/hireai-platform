@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import API from '../../api'; 
 import {
   FaMapMarkerAlt,
   FaMoneyBillWave,
@@ -28,7 +28,8 @@ const JobDetails = () => {
 
   const fetchJob = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/jobs/${id}`);
+      // <--- 2. UPDATED: API.get() with relative path
+      const res = await API.get(`/jobs/${id}`);
       setJob(res.data);
     } catch (err) {
       console.error(err);
@@ -52,7 +53,6 @@ const JobDetails = () => {
 
   // --- APPLY LOGIC ---
   const handleApplyClick = () => {
-    // Trigger the hidden file input
     fileInputRef.current.click();
   };
 
@@ -60,7 +60,6 @@ const JobDetails = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // NO Confirm Dialog - Just do it (or use a custom modal if you prefer)
     setApplying(true);
     const user = JSON.parse(localStorage.getItem("user"));
 
@@ -69,12 +68,13 @@ const JobDetails = () => {
     formData.append("candidateId", user._id || user.id);
 
     try {
-      await axios.post(`http://localhost:5000/api/jobs/apply/${id}`, formData, {
+      // <--- 3. UPDATED: API.post() with relative path
+      // Note: We keep "multipart/form-data" header for file uploads
+      await API.post(`/jobs/apply/${id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // UX Improvement: Show success state on button instead of Alert
-      alert("Application Sent!"); // Keep simple alert or remove entirely if you prefer
+      alert("Application Sent!"); 
       navigate("/candidate/dashboard");
     } catch (err) {
       console.error(err);

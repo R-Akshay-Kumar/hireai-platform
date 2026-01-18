@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import API from "../../api"; 
 import { FaPlus, FaBriefcase, FaUsers } from "react-icons/fa";
 
 const RecruiterDashboard = () => {
@@ -17,9 +17,8 @@ const RecruiterDashboard = () => {
       // Ensure we handle both _id (MongoDB) and id (some auth providers)
       const userId = user._id || user.id;
 
-      const res = await axios.get(
-        `http://localhost:5000/api/jobs/recruiter/${userId}`,
-      );
+      // <--- 2. UPDATED: API.get() with relative path
+      const res = await API.get(`/jobs/recruiter/${userId}`);
       setJobs(res.data);
     } catch (err) {
       console.error("Error fetching jobs:", err);
@@ -50,7 +49,7 @@ const RecruiterDashboard = () => {
           </Link>
         </div>
 
-        {/* STATS CARDS (Placeholder logic for now) */}
+        {/* STATS CARDS */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-l-4 border-l-indigo-500">
             <div className="flex justify-between items-center">
@@ -69,7 +68,7 @@ const RecruiterDashboard = () => {
                 <p className="text-gray-500 text-sm font-medium">
                   Total Applicants
                 </p>
-                {/* We will calculate total applicants later */}
+                {/* Calculate total applicants across all jobs */}
                 <h3 className="text-2xl font-bold text-gray-800">
                   {jobs.reduce(
                     (acc, job) =>
@@ -128,14 +127,14 @@ const RecruiterDashboard = () => {
                   <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
                     {job.applicants ? job.applicants.length : 0} Applicants
                   </span>
-                  <button className="text-gray-400 hover:text-indigo-600 font-medium text-sm">
+                  
                     <Link
                       to={`/recruiter/job/${job._id}/applicants`}
                       className="text-indigo-600 hover:text-indigo-800 font-medium text-sm border border-indigo-200 px-3 py-1 rounded-lg hover:bg-indigo-50 transition"
                     >
                       View Applicants
                     </Link>
-                  </button>
+                  
                 </div>
               </div>
             ))}

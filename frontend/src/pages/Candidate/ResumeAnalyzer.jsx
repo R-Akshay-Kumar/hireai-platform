@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom'; // <--- Added this import
-import axios from 'axios';
+import { useLocation } from 'react-router-dom';
+import API from '../../api';
 import { FaUpload, FaFileAlt, FaChartLine, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
 
 const ResumeAnalyzer = () => {
-  const location = useLocation(); // <--- This hook reads the data sent from Job Board
+  const location = useLocation();
 
   const [file, setFile] = useState(null);
   const [jobDescription, setJobDescription] = useState('');
@@ -35,7 +35,9 @@ const ResumeAnalyzer = () => {
     formData.append('jobDescription', jobDescription);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/resume/analyze', formData, {
+      // <--- 2. UPDATED: API.post() with relative path
+      // We keep the header for multipart/form-data to ensure file uploads work correctly
+      const res = await API.post('/resume/analyze', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setResult(res.data);
@@ -64,7 +66,7 @@ const ResumeAnalyzer = () => {
                 1. Job Description
                 {location.state?.jobTitle && (
                    <span className="ml-2 text-xs font-normal text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
-                     Auto-filled for: {location.state.jobTitle}
+                      Auto-filled for: {location.state.jobTitle}
                    </span>
                 )}
               </label>

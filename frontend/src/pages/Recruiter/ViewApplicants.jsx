@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
+import API from "../../api"; 
 import {
   FaUser,
   FaFilePdf,
@@ -22,18 +22,17 @@ const ViewApplicants = () => {
 
   const handleUpdateStatus = async (applicantId, newStatus) => {
     try {
-      await axios.put(
-        `http://localhost:5000/api/jobs/${id}/applicant/${applicantId}/status`,
-        {
-          status: newStatus,
-        },
+      // <--- 2. UPDATED: API.put() with relative path
+      await API.put(
+        `/jobs/${id}/applicant/${applicantId}/status`,
+        { status: newStatus }
       );
 
       // Update local state instantly to reflect change
       setApplicants((prev) =>
         prev.map((app) =>
-          app._id === applicantId ? { ...app, status: newStatus } : app,
-        ),
+          app._id === applicantId ? { ...app, status: newStatus } : app
+        )
       );
     } catch (err) {
       alert("Failed to update status");
@@ -43,14 +42,13 @@ const ViewApplicants = () => {
 
   const fetchApplicants = async () => {
     try {
+      // <--- 3. UPDATED: API.get() calls
       // 1. Get Job Details (for Title)
-      const jobRes = await axios.get(`http://localhost:5000/api/jobs/${id}`);
+      const jobRes = await API.get(`/jobs/${id}`);
       setJobTitle(jobRes.data.title);
 
       // 2. Get Applicants List
-      const res = await axios.get(
-        `http://localhost:5000/api/jobs/${id}/applicants`,
-      );
+      const res = await API.get(`/jobs/${id}/applicants`);
       setApplicants(res.data);
     } catch (err) {
       console.error(err);
@@ -60,10 +58,12 @@ const ViewApplicants = () => {
   };
 
   const handleDownloadResume = (resumeUrl) => {
-    // Construct the full URL to the file on the backend
-    // Note: You might need to make the 'uploads' folder static in server.js for this to work perfectly
-    const fullUrl = `http://localhost:5000/${resumeUrl.replace(/\\/g, "/")}`;
-    window.open(fullUrl, "_blank");
+    // <--- 4. UPDATED: Cloudinary returns a full URL, so we just open it directly
+    if (resumeUrl) {
+      window.open(resumeUrl, "_blank");
+    } else {
+      alert("Resume URL not found");
+    }
   };
 
   return (
@@ -93,8 +93,7 @@ const ViewApplicants = () => {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     AI Match Score
-                  </th>{" "}
-                  {/* NEW */}
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Applied Date
                   </th>
@@ -135,8 +134,8 @@ const ViewApplicants = () => {
                             app.matchScore >= 70
                               ? "bg-green-100 text-green-800"
                               : app.matchScore >= 40
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-red-100 text-red-800"
                           }`}
                         >
                           {app.matchScore}% Match
@@ -166,9 +165,8 @@ const ViewApplicants = () => {
                       </button>
                     </td>
 
-                    {/* 5. ACTIONS / STATUS (The Fix) */}
+                    {/* 5. ACTIONS */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {/* If Status is Pending -> Show Buttons */}
                       {app.status === "Pending" ? (
                         <div className="flex gap-2">
                           <button
@@ -189,7 +187,6 @@ const ViewApplicants = () => {
                           </button>
                         </div>
                       ) : (
-                        // If Status is NOT Pending -> Show Badge Only (Buttons Disappear)
                         <span
                           className={`px-4 py-1.5 rounded-full text-xs font-bold border ${
                             app.status === "Accepted"

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios'; // Import Axios
+import API from '../../api';
 import { FaFileAlt, FaMicrophone, FaBriefcase, FaArrowRight, FaCheckCircle, FaTimesCircle, FaClock } from 'react-icons/fa';
 
 const CandidateDashboard = () => {
@@ -14,7 +14,7 @@ const CandidateDashboard = () => {
 
   const fetchApplications = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/jobs/candidate/${user._id || user.id}/applications`);
+      const res = await API.get(`/jobs/candidate/${user._id || user.id}/applications`);
       setApplications(res.data);
     } catch (err) {
       console.error("Error fetching applications:", err);

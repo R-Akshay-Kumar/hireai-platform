@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import API from "../../api";
 import {
   FaClock,
   FaExclamationTriangle,
@@ -239,14 +239,12 @@ const MockInterview = () => {
     const user = JSON.parse(localStorage.getItem("user"));
 
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/interview/start",
-        {
-          userId: user._id || user.id,
-          jobTitle,
-          jobDescription: jobDesc,
-        },
-      );
+      // <--- 2. UPDATED: API.post() with relative path
+      const res = await API.post("/interview/start", {
+        userId: user._id || user.id,
+        jobTitle,
+        jobDescription: jobDesc,
+      });
 
       setInterviewId(res.data._id);
       setStep("interview");
@@ -275,13 +273,11 @@ const MockInterview = () => {
         speechBuffer.current.trim() || "[User skipped or stayed silent]";
 
       try {
-        const res = await axios.post(
-          "http://localhost:5000/api/interview/chat",
-          {
-            interviewId,
-            userAnswer: answerToSend,
-          },
-        );
+        // <--- 3. UPDATED: API.post() with relative path
+        const res = await API.post("/interview/chat", {
+          interviewId,
+          userAnswer: answerToSend,
+        });
 
         if (res.data.status === "completed") {
           setFeedback(res.data.feedback);
@@ -328,13 +324,11 @@ const MockInterview = () => {
         speechBuffer.current.trim() || "[User ended interview early]";
 
       try {
-        const res = await axios.post(
-          "http://localhost:5000/api/interview/chat",
-          {
-            interviewId,
-            userAnswer: answerToSend,
-          },
-        );
+        // <--- 4. UPDATED: API.post() with relative path
+        const res = await API.post("/interview/chat", {
+          interviewId,
+          userAnswer: answerToSend,
+        });
 
         if (res.data.feedback) setFeedback(res.data.feedback);
         forceFeedbackState();
@@ -366,7 +360,9 @@ const MockInterview = () => {
         <div className="fixed inset-0 bg-black/50 z-[10000] flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full">
             <h3
-              className={`text-xl font-bold mb-2 ${modal.type === "warning" ? "text-red-600" : "text-gray-800"}`}
+              className={`text-xl font-bold mb-2 ${
+                modal.type === "warning" ? "text-red-600" : "text-gray-800"
+              }`}
             >
               {modal.title}
             </h3>
@@ -382,9 +378,15 @@ const MockInterview = () => {
               )}
               <button
                 onClick={modal.onConfirm}
-                className={`px-4 py-2 rounded-lg font-bold text-white ${modal.type === "warning" ? "bg-red-600 hover:bg-red-700" : "bg-indigo-600 hover:bg-indigo-700"}`}
+                className={`px-4 py-2 rounded-lg font-bold text-white ${
+                  modal.type === "warning"
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-indigo-600 hover:bg-indigo-700"
+                }`}
               >
-                {modal.type === "warning" ? "Return to Full Screen" : "Confirm"}
+                {modal.type === "warning"
+                  ? "Return to Full Screen"
+                  : "Confirm"}
               </button>
             </div>
           </div>
@@ -436,10 +438,15 @@ const MockInterview = () => {
               Question {questionCount}/5
             </span>
             <div
-              className={`text-2xl font-mono font-bold flex items-center gap-3 ${timeLeft < 10 ? "text-red-500 animate-pulse" : "text-green-400"}`}
+              className={`text-2xl font-mono font-bold flex items-center gap-3 ${
+                timeLeft < 10
+                  ? "text-red-500 animate-pulse"
+                  : "text-green-400"
+              }`}
             >
               <FaClock />
-              {Math.floor(timeLeft / 60)}:{("0" + (timeLeft % 60)).slice(-2)}
+              {Math.floor(timeLeft / 60)}:
+              {("0" + (timeLeft % 60)).slice(-2)}
             </div>
           </div>
 
@@ -452,7 +459,9 @@ const MockInterview = () => {
             ) : (
               <div className="max-w-5xl w-full text-center space-y-8">
                 <div
-                  className={`font-bold text-gray-800 leading-relaxed ${getFontSize(currentQuestion)}`}
+                  className={`font-bold text-gray-800 leading-relaxed ${getFontSize(
+                    currentQuestion
+                  )}`}
                 >
                   {formatText(currentQuestion)}
                 </div>
