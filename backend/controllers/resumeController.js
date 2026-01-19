@@ -31,37 +31,42 @@ const analyzeLocally = (resumeText, jobDescription) => {
 // --- MAIN CONTROLLER ---
 const analyzeResume = async (req, res) => {
   try {
+    // 1. Force the use of the STABLE v1 API version
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     
-    // This confirms your SDK is working!
+    // Pass the apiVersion explicitly here to fix the 404
+    const model = genAI.getGenerativeModel(
+      { model: "gemini-1.5-flash" },
+      { apiVersion: "v1" } 
+    );
+
     console.log("🛠️ SDK Version:", require('@google/generative-ai/package.json').version);
-
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-    // --- ADD THIS SECTION: Define the prompt ---
+    
+    // 2. Ensure prompt is defined (to fix your previous error)
     const prompt = `
-      Analyze this resume against the following job description.
-      Job Description: ${req.body.jobDescription}
-      Return a JSON object with score, missingSkills, and suggestions.
+      Act as an ATS system. 
+      Resume: ${req.body.resumeText || "No resume text"}
+      Job Description: ${req.body.jobDescription || "No JD"}
+      Return JSON: { "score": 80, "missingSkills": [], "suggestions": [] }
     `;
-    // --------------------------------------------
 
-    console.log("🤖 Attempting AI Call...");
+    console.log("🤖 Attempting AI Call with v1 API...");
     
     const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const response = await result.response;
+    const text = response.text();
     
-    // Standard cleaning and sending response
-    const jsonStart = text.indexOf('{');
-    const jsonEnd = text.lastIndexOf('}');
-    const cleanJson = text.substring(jsonStart, jsonEnd + 1);
+    // Extract JSON and send
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("AI did not return valid JSON");
     
-    res.json(JSON.parse(cleanJson));
+    res.json(JSON.parse(jsonMatch[0]));
 
   } catch (error) {
     console.error("❌ THE ACTUAL ERROR:");
     console.error("- Message:", error.message);
     
+    // Return error to frontend
     res.status(500).json({ error: error.message });
   }
 };
