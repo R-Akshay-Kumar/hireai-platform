@@ -39,7 +39,7 @@ const getAIResponse = async (conversationHistory, jobDescription) => {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
     // ATTEMPT 1: Try the "Lite" model (Often has better availability)
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite-preview-02-05" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
     const prompt = `
       You are an expert Technical Interviewer.
@@ -67,7 +67,7 @@ const getAIResponse = async (conversationHistory, jobDescription) => {
 const getFinalFeedback = async (conversationHistory, jobDescription) => {
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite-preview-02-05" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
     const prompt = `
       Evaluate this interview.

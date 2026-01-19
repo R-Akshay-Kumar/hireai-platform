@@ -58,7 +58,7 @@ const calculateAIScore = async (resumePath, jobDescription) => {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     
     // FIX 2: Ensure we use the stable v1 API and a confirmed model name
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite-preview-02-05" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
     const prompt = `
       You are an ATS. 
@@ -218,7 +218,7 @@ exports.getJobApplicants = async (req, res) => {
         console.log(`[CALCULATING] ${candidateName} (${reason})...`);
 
         if (app.resumeUrl) {
-          await new Promise((r) => setTimeout(r, 1000)); // Delay for rate limits
+          await new Promise((r) => setTimeout(r, 3000)); // Delay for rate limits
 
           const result = await calculateAIScore(app.resumeUrl, job.description);
 
