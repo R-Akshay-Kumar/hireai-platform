@@ -30,51 +30,33 @@ const analyzeLocally = (resumeText, jobDescription) => {
 
 // --- MAIN CONTROLLER ---
 const analyzeResume = async (req, res) => {
-  let resumeText = ""; // Define outside try block
-  
   try {
-    if (!process.env.GEMINI_API_KEY) return res.status(500).json({ message: "API Key missing" });
-    if (!req.file) return res.status(400).json({ message: 'No resume file uploaded' });
-    if (!req.body.jobDescription) return res.status(400).json({ message: 'No Job Description provided' });
-
-    console.log("📄 Processing Cloudinary File:", req.file.path);
-
-    // 1. Download & Parse PDF
-    const response = await axios.get(req.file.path, { responseType: 'arraybuffer' });
-    const pdfData = await pdfParse(response.data);
-    resumeText = pdfData.text;
-
-    console.log("✅ PDF Parsed. Length:", resumeText.length);
-
-    // 2. Call AI
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    
+    // Log the SDK version being used by Render
+    console.log("🛠️ SDK Version:", require('@google/generative-ai/package.json').version);
+
+    // Use a specific model version to avoid "alias" issues
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    
-    const prompt = `
-      Act as an expert Technical Recruiter.
-      Compare this Resume and Job Description (JD).
-      Resume: "${resumeText.substring(0, 4000)}"
-      JD: "${req.body.jobDescription.substring(0, 2000)}"
-      STRICTLY return ONLY a JSON object. Format:
-      { "score": 85, "missingSkills": ["a", "b"], "suggestions": ["x", "y"] }
-    `;
 
-    console.log("🤖 Asking Gemini...");
+    console.log("🤖 Attempting AI Call...");
+    
     const result = await model.generateContent(prompt);
-    const text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+    // ... rest of your code
     
-    res.json(JSON.parse(text));
-
   } catch (error) {
-    console.error(`❌ AI ERROR: ${error.message}`);
+    console.error("❌ THE ACTUAL ERROR:");
+    console.error("- Status:", error.status || "Unknown");
+    console.error("- Message:", error.message);
     
-    // 3. Fallback: If AI fails, use Local Logic
-    if (resumeText) {
-      const fallbackResult = analyzeLocally(resumeText, req.body.jobDescription);
-      return res.json(fallbackResult);
+    // This logs the actual URL that failed
+    if (error.stack) {
+      const urlMatch = error.stack.match(/https:\/\/generativelanguage\.googleapis\.com\/[^\s]+/);
+      if (urlMatch) console.log("- Failed URL:", urlMatch[0]);
     }
 
-    res.status(500).json({ message: 'Analysis failed', error: error.message });
+    // Temporary: return the error to the screen so you don't have to check logs
+    res.status(500).json({ error: error.message, debug: "Check Render Logs" });
   }
 };
 
