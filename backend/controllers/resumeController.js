@@ -61,10 +61,7 @@ const analyzeResume = async (req, res) => {
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
       // USE 'gemini-pro' - It is the most globally stable model for v1
-      const model = genAI.getGenerativeModel(
-        { model: "gemini-1.5-flash" }, // Use 1.5-flash as it is more modern than 'pro'
-        { apiVersion: "v1" }, // This MUST be v1 to stop the 404
-      );
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite-preview-02-05" });
 
       const prompt = `Analyze resume for this JD: ${jobDescription}. Resume: ${resumeText.substring(0, 4000)}. Return JSON ONLY: {"score": 85, "missingSkills": [], "suggestions": []}`;
 

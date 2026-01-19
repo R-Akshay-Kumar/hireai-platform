@@ -58,10 +58,7 @@ const calculateAIScore = async (resumePath, jobDescription) => {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     
     // FIX 2: Ensure we use the stable v1 API and a confirmed model name
-    const model = genAI.getGenerativeModel(
-      { model: "gemini-1.5-flash" }, 
-      { apiVersion: "v1" }
-    );
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite-preview-02-05" });
 
     const prompt = `
       You are an ATS. 
