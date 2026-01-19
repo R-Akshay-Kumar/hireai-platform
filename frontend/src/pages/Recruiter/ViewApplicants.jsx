@@ -60,6 +60,7 @@ const ViewApplicants = () => {
   const handleDownloadResume = (resumeUrl) => {
     // <--- 4. UPDATED: Cloudinary returns a full URL, so we just open it directly
     if (resumeUrl) {
+      const viewUrl = resumeUrl.replace("/upload/", "/upload/fl_inline,f_auto/");
       window.open(resumeUrl, "_blank");
     } else {
       alert("Resume URL not found");
@@ -161,7 +162,7 @@ const ViewApplicants = () => {
                         onClick={() => handleDownloadResume(app.resumeUrl)}
                         className="text-indigo-600 hover:text-indigo-900 font-medium flex items-center gap-2"
                       >
-                        <FaFilePdf /> View PDF
+                        <FaFilePdf /> View Resume
                       </button>
                     </td>
 
