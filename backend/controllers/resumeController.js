@@ -48,7 +48,7 @@ const analyzeResume = async (req, res) => {
 
     // 2. Call AI
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite-preview-02-05" });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
     
     const prompt = `
       Act as an expert Technical Recruiter.

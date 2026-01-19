@@ -33,7 +33,7 @@ const calculateAIScore = async (resumePath, jobDescription) => {
     resumeText = pdfData.text;
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite-preview-02-05" });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
     const prompt = `
       You are an ATS.
