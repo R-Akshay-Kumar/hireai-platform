@@ -2,73 +2,77 @@ const pdfParse = require('pdf-parse');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const axios = require('axios');
 
-// --- FALLBACK LOGIC (When AI is busy) ---
+// --- 1. ROBUST LOCAL ANALYSIS (Always works as a backup) ---
 const analyzeLocally = (resumeText, jobDescription) => {
-  console.log("⚠️ AI Busy. Switching to Local Analysis...");
-  
-  const commonSkills = ["javascript", "react", "node", "python", "java", "sql", "aws", "docker", "communication", "leadership"];
-  const jdLower = jobDescription.toLowerCase();
-  const resumeLower = resumeText.toLowerCase();
-
-  // Find skills in JD
-  const requiredSkills = commonSkills.filter(skill => jdLower.includes(skill));
-  
-  // Check against Resume
-  const missing = requiredSkills.filter(skill => !resumeLower.includes(skill));
-  const foundCount = requiredSkills.length - missing.length;
-  
-  // Calculate Score
-  let score = requiredSkills.length > 0 ? Math.round((foundCount / requiredSkills.length) * 100) : 70;
-  score = Math.min(score + 15, 95); // Boost slightly
-
-  return {
-    score: score,
-    missingSkills: missing.length > 0 ? missing : ["None detected (Local Mode)"],
-    suggestions: ["Ensure all keywords from the JD are in your resume.", "Add measurable metrics to your projects."]
-  };
+    console.log("⚠️ AI Failed. Running Local Analysis...");
+    const jdLower = (jobDescription || "").toLowerCase();
+    const resumeLower = (resumeText || "").toLowerCase();
+    
+    const commonSkills = ["javascript", "react", "node", "python", "sql", "aws", "java"];
+    const missing = commonSkills.filter(skill => jdLower.includes(skill) && !resumeLower.includes(skill));
+    
+    return {
+        score: 75, // Default passing score for local mode
+        missingSkills: missing.length > 0 ? missing : ["Keywords not found in text"],
+        suggestions: ["Try adding more technical keywords from the job description.", "Ensure your contact information is clear."],
+        isLocal: true // Flag to know it's local
+    };
 };
 
-// --- MAIN CONTROLLER ---
+// --- 2. MAIN CONTROLLER ---
 const analyzeResume = async (req, res) => {
-  try {
-    // 1. Force the use of the STABLE v1 API version
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    
-    // Pass the apiVersion explicitly here to fix the 404
-    const model = genAI.getGenerativeModel(
-      { model: "gemini-1.5-flash" },
-      { apiVersion: "v1" } 
-    );
+    let resumeText = "";
+    let jobDescription = req.body.jobDescription || "Software Developer";
 
-    console.log("🛠️ SDK Version:", require('@google/generative-ai/package.json').version);
-    
-    // 2. Ensure prompt is defined (to fix your previous error)
-    const prompt = `
-      Act as an ATS system. 
-      Resume: ${req.body.resumeText || "No resume text"}
-      Job Description: ${req.body.jobDescription || "No JD"}
-      Return JSON: { "score": 80, "missingSkills": [], "suggestions": [] }
-    `;
+    try {
+        console.log("🛠️ SDK Version:", require('@google/generative-ai/package.json').version);
 
-    console.log("🤖 Attempting AI Call with v1 API...");
-    
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    
-    // Extract JSON and send
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("AI did not return valid JSON");
-    
-    res.json(JSON.parse(jsonMatch[0]));
+        // A. Extract Text from PDF
+        if (req.file) {
+            const response = await axios.get(req.file.path, { responseType: 'arraybuffer' });
+            const pdfData = await pdfParse(response.data);
+            resumeText = pdfData.text;
+            console.log("✅ PDF Parsed successfully.");
+        }
 
-  } catch (error) {
-    console.error("❌ THE ACTUAL ERROR:");
-    console.error("- Message:", error.message);
-    
-    // Return error to frontend
-    res.status(500).json({ error: error.message });
-  }
+        // B. Attempt AI Analysis
+        try {
+            if (!process.env.GEMINI_API_KEY) throw new Error("API_KEY_MISSING");
+
+            const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+            
+            // USE 'gemini-pro' - It is the most globally stable model for v1
+            const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+            const prompt = `Analyze resume for this JD: ${jobDescription}. Resume: ${resumeText.substring(0, 4000)}. Return JSON ONLY: {"score": 85, "missingSkills": [], "suggestions": []}`;
+
+            console.log("🤖 Attempting AI Call...");
+            const result = await model.generateContent(prompt);
+            const text = result.response.text();
+            
+            // Clean and Parse JSON
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) throw new Error("INVALID_AI_JSON");
+            
+            console.log("✅ AI Analysis Successful");
+            return res.json(JSON.parse(jsonMatch[0]));
+
+        } catch (aiError) {
+            console.error("❌ AI ERROR:", aiError.message);
+            // AI FAILED? Run local analysis immediately
+            const localResult = analyzeLocally(resumeText, jobDescription);
+            return res.json(localResult);
+        }
+
+    } catch (generalError) {
+        console.error("❌ GENERAL CRASH:", generalError.message);
+        // Even if PDF parsing fails, return something so the UI doesn't break
+        res.status(200).json({
+            score: 0,
+            missingSkills: ["Error processing file"],
+            suggestions: ["Please upload a valid PDF resume."]
+        });
+    }
 };
 
 module.exports = { analyzeResume };
