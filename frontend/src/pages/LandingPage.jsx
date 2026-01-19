@@ -14,8 +14,7 @@ const LandingPage = () => {
             <span className="text-indigo-300">Reimagined with AI.</span>
           </h1>
           <p className="text-xl md:text-2xl text-indigo-100 max-w-3xl mx-auto mb-10">
-            The all-in-one platform for automated hiring. 
-            Smart Resume Analysis, AI Mock Interviews, and Instant Applicant Ranking.
+            Unified platform for job specific candidate screening and preparation.
           </p>
           <div className="flex justify-center gap-4">
             <Link to="/signup" className="bg-white text-indigo-700 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition shadow-xl">
