@@ -33,30 +33,36 @@ const analyzeResume = async (req, res) => {
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     
-    // Log the SDK version being used by Render
+    // This confirms your SDK is working!
     console.log("🛠️ SDK Version:", require('@google/generative-ai/package.json').version);
 
-    // Use a specific model version to avoid "alias" issues
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    // --- ADD THIS SECTION: Define the prompt ---
+    const prompt = `
+      Analyze this resume against the following job description.
+      Job Description: ${req.body.jobDescription}
+      Return a JSON object with score, missingSkills, and suggestions.
+    `;
+    // --------------------------------------------
 
     console.log("🤖 Attempting AI Call...");
     
     const result = await model.generateContent(prompt);
-    // ... rest of your code
+    const text = result.response.text();
     
+    // Standard cleaning and sending response
+    const jsonStart = text.indexOf('{');
+    const jsonEnd = text.lastIndexOf('}');
+    const cleanJson = text.substring(jsonStart, jsonEnd + 1);
+    
+    res.json(JSON.parse(cleanJson));
+
   } catch (error) {
     console.error("❌ THE ACTUAL ERROR:");
-    console.error("- Status:", error.status || "Unknown");
     console.error("- Message:", error.message);
     
-    // This logs the actual URL that failed
-    if (error.stack) {
-      const urlMatch = error.stack.match(/https:\/\/generativelanguage\.googleapis\.com\/[^\s]+/);
-      if (urlMatch) console.log("- Failed URL:", urlMatch[0]);
-    }
-
-    // Temporary: return the error to the screen so you don't have to check logs
-    res.status(500).json({ error: error.message, debug: "Check Render Logs" });
+    res.status(500).json({ error: error.message });
   }
 };
 
