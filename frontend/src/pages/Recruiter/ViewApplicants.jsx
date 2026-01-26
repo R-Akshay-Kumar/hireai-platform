@@ -55,16 +55,22 @@ const ViewApplicants = () => {
     }
   };
 
-  // --- UPDATED FUNCTION TO VIEW RESUME IN NEW TAB ---
+  // --- UPDATED HANDLER (Fixes 404 Error) ---
   const handleViewResume = (resumeUrl) => {
     if (resumeUrl) {
-      // Cloudinary Trick: 
-      // Replace "/upload/" with "/upload/fl_inline/"
-      // 'fl_inline' forces the browser to try and display the PDF instead of downloading it.
-      const viewUrl = resumeUrl.replace("/upload/", "/upload/fl_inline/");
-      
-      // Open the MODIFIED url, not the original one
-      window.open(viewUrl, "_blank");
+      // Check if it is a "raw" file (legacy uploads)
+      const isRaw = resumeUrl.includes("/raw/");
+
+      if (isRaw) {
+        // Raw files cannot use transformations, so we open them directly.
+        // (This might still download depending on browser settings, but it won't 404)
+        window.open(resumeUrl, "_blank");
+      } else {
+        // For "auto" or "image" types (Future uploads), use fl_inline
+        // This forces the PDF to Render in the tab instead of downloading
+        const viewUrl = resumeUrl.replace("/upload/", "/upload/fl_inline/");
+        window.open(viewUrl, "_blank");
+      }
     } else {
       alert("Resume URL not found");
     }

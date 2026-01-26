@@ -15,7 +15,7 @@ const storage = new CloudinaryStorage({
   params: {
     folder: 'hireai_resumes', // The folder name in Cloudinary
     allowed_formats: ['pdf', 'doc', 'docx'], // Only allow documents
-    resource_type: 'raw' // Important for PDF files!
+    resource_type: 'auto' 
   },
 });
 
