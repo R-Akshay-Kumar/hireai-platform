@@ -30,7 +30,7 @@ const LandingPage = () => {
       {/* FEATURES SECTION */}
       <div className="max-w-7xl mx-auto px-6 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-gray-900">Why Choose HireAI?</h2>
+          <h2 className="text-3xl font-bold text-gray-900">Why Choose EvalHire?</h2>
           <p className="text-gray-500 mt-2">Powerful tools for both Candidates and Recruiters.</p>
         </div>
 
@@ -74,7 +74,7 @@ const LandingPage = () => {
 
       {/* FOOTER */}
       <div className="bg-gray-900 text-gray-400 py-8 text-center border-t border-gray-800">
-        <p>&copy; {new Date().getFullYear()} HireAI Project. Built with React, Node.js & Gemini AI.</p>
+        <p>&copy; {new Date().getFullYear()} EvalHire Project. Built with React, Node.js & Gemini AI.</p>
       </div>
 
     </div>

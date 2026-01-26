@@ -38,7 +38,7 @@ const Navbar = () => {
           <div className="flex items-center">
             <Link to="/" className="flex items-center gap-2 text-2xl font-bold text-indigo-600">
               <FaRobot className="text-3xl" />
-              <span>HireAI</span>
+              <span>EvalHire</span>
             </Link>
           </div>
 

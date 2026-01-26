@@ -1,6 +1,6 @@
-# 🚀 HireAI - AI-Powered Recruitment Platform
+# 🚀 EvalHire - AI-Powered Recruitment Platform
 
-HireAI is a modern **Applicant Tracking System (ATS)** that leverages **Google Gemini AI** to streamline the hiring process. It connects Recruiters and Candidates with intelligent tools like **Automated Resume Ranking** and **AI-Driven Mock Interviews**.
+EvalHire is a modern **Applicant Tracking System (ATS)** that leverages **Google Gemini AI** to streamline the hiring process. It connects Recruiters and Candidates with intelligent tools like **Automated Resume Ranking** and **AI-Driven Mock Interviews**.
 
 ## 🌟 Key Features
 
