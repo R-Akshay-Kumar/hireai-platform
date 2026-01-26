@@ -35,27 +35,31 @@ const cleanJSON = (text) => {
   return text.replace(/```json/g, "").replace(/```/g, "").trim();
 };
 
-const getAIResponse = async (history, jobDescription, questionCount) => {
+const getAIResponse = async (conversation, jobDescription, questionCount) => {
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: GEN_MODEL });
 
-    // PROMPT: Variable Time & Bridge-Pivot Strategy
+    // Map 'ai' role to 'model' for Gemini API compatibility
+    const historyForGemini = conversation.map(msg => ({
+      role: msg.role === 'ai' ? 'model' : 'user',
+      parts: [{ text: msg.content }]
+    }));
+
     const prompt = `
       You are a Technical Interviewer for this Job Description:
       "${jobDescription.substring(0, 400)}..."
 
-      History of this interview:
-      ${JSON.stringify(history.slice(-4))}
+      History: ${JSON.stringify(historyForGemini.slice(-4))}
 
       Task: Generate the NEXT technical question (Question ${questionCount + 1}).
       
       CRITICAL INSTRUCTIONS:
-      1. ACKNOWLEDGE & PIVOT: Briefly acknowledge the user's last answer to be natural, BUT immediately pivot to a NEW topic from the JD.
-      2. COMPLEXITY & TIME: Analyze the difficulty of your question.
-         - Simple/Behavioral: Set 'timeLimit' to 60 or 90 seconds.
-         - Technical/Deep: Set 'timeLimit' to 120, 180, or 240 seconds.
-      3. LENGTH: Keep the question text under 35 words.
+      1. ACKNOWLEDGE & PIVOT: Briefly acknowledge the user's last answer, BUT pivot to a NEW topic.
+      2. COMPLEXITY & TIME: Analyze difficulty.
+         - Simple/Behavioral: 'timeLimit' 60-90s.
+         - Technical/Deep: 'timeLimit' 120-240s.
+      3. LENGTH: Keep question under 35 words.
       4. FORMAT: Return ONLY raw JSON.
       
       JSON Schema:
@@ -73,24 +77,21 @@ const getAIResponse = async (history, jobDescription, questionCount) => {
   }
 };
 
-const getFinalFeedback = async (history, jobDescription) => {
+const getFinalFeedback = async (conversation, jobDescription) => {
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: GEN_MODEL });
 
-    // PROMPT: Smart Grading (Ignores Time Taken)
     const prompt = `
       Act as a Hiring Manager. Evaluate this interview.
-      
-      Job Description: "${jobDescription.substring(0, 500)}"
-      Interview History: ${JSON.stringify(history)}
+      JD: "${jobDescription.substring(0, 500)}"
+      History: ${JSON.stringify(conversation)}
       
       Task: Generate a JSON feedback report.
-      
       GRADING RULES:
-      1. IGNORE TIME: Do not judge based on how fast or slow they answered. 
-      2. CONTENT IS KING: If the user provided a text answer in the history (even a short one), GRADE IT based on technical accuracy and relevance.
-      3. SKIPS: Only mark as 0/Skipped if the user content explicitly says "[User skipped...]" or is completely empty.
+      1. IGNORE TIME: Do not judge based on speed.
+      2. CONTENT IS KING: If the user provided a text answer, GRADE IT.
+      3. SKIPS: Only mark as 0/Skipped if answer is explicitly empty.
       
       Strictly follow this JSON schema:
       {
@@ -118,18 +119,19 @@ exports.startInterview = async (req, res) => {
   try {
     const { userId, jobTitle, jobDescription } = req.body;
 
+    // UPDATED: Using 'conversation' to match Schema
     const newInterview = new Interview({
       userId,
       jobTitle,
       jobDescription,
-      history: [],
-      status: "in-progress",
+      conversation: [], 
+      status: "active", // Matched Schema Default
     });
 
-    // Generate Q1
     const aiData = await getAIResponse([], jobDescription, 0);
 
-    newInterview.history.push({ role: "model", content: aiData.question });
+    // UPDATED: Using 'ai' role to match Schema
+    newInterview.conversation.push({ role: "ai", content: aiData.question });
     await newInterview.save();
 
     res.json({
@@ -142,7 +144,7 @@ exports.startInterview = async (req, res) => {
   }
 };
 
-exports.handleChat = async (req, res) => {
+exports.chat = async (req, res) => {
   try {
     const { interviewId, userAnswer } = req.body;
     const interview = await Interview.findById(interviewId);
@@ -150,48 +152,48 @@ exports.handleChat = async (req, res) => {
     if (!interview) return res.status(404).json({ message: "Interview not found" });
 
     // 1. Save User Answer
-    // Logic check: Ensure we don't save empty strings if possible, or handle them gracefully
     const finalAnswer = userAnswer ? userAnswer : "[No audio detected]";
-    interview.history.push({ role: "user", content: finalAnswer });
+    // UPDATED: Push to 'conversation'
+    interview.conversation.push({ role: "user", content: finalAnswer });
 
-    // 2. Check Progress
-    const questionCount = interview.history.filter(h => h.role === "model").length;
+    // 2. Check Progress (Count 'ai' messages)
+    const questionCount = interview.conversation.filter(h => h.role === "ai").length;
 
-    // --- CASE A: END INTERVIEW (5 Questions) ---
+    // --- CASE A: END INTERVIEW ---
     if (questionCount >= 5 || userAnswer.includes("[User ended interview early]")) {
       console.log("Generating Final Report...");
-      
-      // Add a small delay to ensure DB write consistency before reading for AI
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 500)); 
 
-      const feedback = await getFinalFeedback(interview.history, interview.jobDescription);
+      const feedback = await getFinalFeedback(interview.conversation, interview.jobDescription);
       
       interview.status = "completed";
-      interview.feedback = feedback;
+      interview.feedback = JSON.stringify(feedback); // Ensure string if schema expects String, or Object if schema expects Mixed
+      interview.score = feedback.score; // Save score to schema
       await interview.save();
 
-      return res.json({
-        status: "completed",
-        feedback: feedback
-      });
+      return res.json({ status: "completed", feedback: feedback });
     }
 
     // --- CASE B: NEXT QUESTION ---
-    const nextQ = await getAIResponse(interview.history, interview.jobDescription, questionCount);
+    const nextQ = await getAIResponse(interview.conversation, interview.jobDescription, questionCount);
     
-    interview.history.push({ role: "model", content: nextQ.question });
+    // UPDATED: Push 'ai' role
+    interview.conversation.push({ role: "ai", content: nextQ.question });
     await interview.save();
 
-    res.json({
-      status: "in-progress",
-      currentQuestion: nextQ
-    });
+    res.json({ status: "in-progress", currentQuestion: nextQ });
 
   } catch (err) {
     console.error("Chat Logic Error:", err);
-    res.json({
-      status: "in-progress",
-      currentQuestion: getRandomFallback()
-    });
+    res.json({ status: "in-progress", currentQuestion: getRandomFallback() });
+  }
+};
+
+exports.getInterview = async (req, res) => {
+  try {
+    const interview = await Interview.findById(req.params.id);
+    res.json(interview);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching interview" });
   }
 };

@@ -83,12 +83,17 @@ const MockInterview = () => {
     });
   };
 
-  const forceFeedbackState = () => {
+  // --- FIX: Accept overrideData to prevent State Race Conditions ---
+  const forceFeedbackState = (overrideData = null) => {
     stopAudio();
     setStep("feedback");
     document.exitFullscreen().catch(() => {});
-    // If backend failed, show local feedback
-    if (!feedback) {
+
+    // If we have new data coming in, use it. Otherwise, check state.
+    const activeFeedback = overrideData || feedback;
+
+    // Only show error if we truly have NO data
+    if (!activeFeedback) {
       setFeedback({
         score: 0,
         strengths: ["Attempted"],
@@ -240,7 +245,6 @@ const MockInterview = () => {
     const user = JSON.parse(localStorage.getItem("user"));
 
     try {
-      // <--- 2. UPDATED: API.post() with relative path
       const res = await API.post("/interview/start", {
         userId: user._id || user.id,
         jobTitle,
@@ -274,15 +278,15 @@ const MockInterview = () => {
         speechBuffer.current.trim() || "[User skipped or stayed silent]";
 
       try {
-        // <--- 3. UPDATED: API.post() with relative path
         const res = await API.post("/interview/chat", {
           interviewId,
           userAnswer: answerToSend,
         });
 
         if (res.data.status === "completed") {
+          // --- FIX: Pass data directly to prevent state lag ---
           setFeedback(res.data.feedback);
-          forceFeedbackState();
+          forceFeedbackState(res.data.feedback); 
         } else {
           const qData = res.data.currentQuestion;
           setCurrentQuestion(qData.question);
@@ -292,7 +296,6 @@ const MockInterview = () => {
         }
       } catch (err) {
         console.error("Next Question Error:", err);
-        // If error is 429 or 500, we likely can't continue. Force submit.
         alert("Server is busy. Submitting interview results now.");
         forceFeedbackState();
       } finally {
@@ -325,17 +328,20 @@ const MockInterview = () => {
         speechBuffer.current.trim() || "[User ended interview early]";
 
       try {
-        // <--- 4. UPDATED: API.post() with relative path
         const res = await API.post("/interview/chat", {
           interviewId,
           userAnswer: answerToSend,
         });
 
-        if (res.data.feedback) setFeedback(res.data.feedback);
-        forceFeedbackState();
+        if (res.data.feedback) {
+             setFeedback(res.data.feedback);
+             forceFeedbackState(res.data.feedback); // --- FIX: Pass data
+        } else {
+             forceFeedbackState();
+        }
       } catch (err) {
         console.error("Submit Error:", err);
-        forceFeedbackState(); // FORCE END EVEN ON ERROR
+        forceFeedbackState(); 
       } finally {
         setLoading(false);
         setModal({ ...modal, show: false });
@@ -353,7 +359,6 @@ const MockInterview = () => {
 
   // --- RENDER ---
 
-  // NOTE: Added z-[9999] and fixed inset-0 to interview container to cover navbar
   return (
     <div className="min-h-screen bg-gray-50 font-sans select-none relative">
       {/* MODAL */}
@@ -430,7 +435,7 @@ const MockInterview = () => {
         </div>
       )}
 
-      {/* INTERVIEW STEP (Overlay Layout - Covers Main Navbar) */}
+      {/* INTERVIEW STEP (Overlay Layout) */}
       {step === "interview" && (
         <div className="fixed inset-0 z-[9999] bg-white flex flex-col overflow-hidden">
           {/* Top Bar */}
@@ -546,7 +551,7 @@ const MockInterview = () => {
             </div>
 
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/candidate/dashboard')}
               className="w-full py-4 bg-gray-900 text-white rounded-lg font-bold hover:bg-black transition"
             >
               Back to Dashboard
