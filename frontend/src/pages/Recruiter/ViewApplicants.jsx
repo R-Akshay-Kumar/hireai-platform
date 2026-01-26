@@ -55,22 +55,41 @@ const ViewApplicants = () => {
     }
   };
 
-  // --- UPDATED HANDLER (Fixes 404 Error) ---
-  const handleViewResume = (resumeUrl) => {
+  const handleViewResume = async (resumeUrl) => {
     if (!resumeUrl) {
       alert("Resume URL not found");
       return;
     }
 
-    let cleanUrl = resumeUrl
-      .replace("/upload/fl_attachment/", "/upload/")
-      .replace("/upload/fl_inline/", "/upload/");
-    
-    if (!cleanUrl.toLowerCase().endsWith(".pdf")) {
-      cleanUrl += ".pdf";
+    try {
+      // 1. Clean the URL
+      const cleanUrl = resumeUrl
+        .replace("/upload/fl_attachment/", "/upload/")
+        .replace("/upload/fl_inline/", "/upload/");
+
+      // 2. Fetch the file manually
+      const response = await fetch(cleanUrl);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch");
+      }
+
+      // 3. FORCE PDF TYPE
+      const blob = await response.blob();
+      const pdfBlob = new Blob([blob], { type: "application/pdf" });
+      
+      // 4. Create a temporary link and open it
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      window.open(blobUrl, "_blank");
+
+      // Cleanup to free memory
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+
+    } catch (error) {
+      console.error("View Error:", error);
+      // Fallback: If fetch fails (rare), just open the link directly
+      window.open(resumeUrl, "_blank");
     }
-    
-    window.open(cleanUrl, "_blank");
   };
 
   return (
