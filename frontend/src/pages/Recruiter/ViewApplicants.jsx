@@ -57,23 +57,16 @@ const ViewApplicants = () => {
 
   // --- UPDATED HANDLER (Fixes 404 Error) ---
   const handleViewResume = (resumeUrl) => {
-    if (resumeUrl) {
-      // Check if it is a "raw" file (legacy uploads)
-      const isRaw = resumeUrl.includes("/raw/");
-
-      if (isRaw) {
-        // Raw files cannot use transformations, so we open them directly.
-        // (This might still download depending on browser settings, but it won't 404)
-        window.open(resumeUrl, "_blank");
-      } else {
-        // For "auto" or "image" types (Future uploads), use fl_inline
-        // This forces the PDF to Render in the tab instead of downloading
-        const viewUrl = resumeUrl.replace("/upload/", "/upload/fl_inline/");
-        window.open(viewUrl, "_blank");
-      }
-    } else {
+    if (!resumeUrl) {
       alert("Resume URL not found");
+      return;
     }
+
+    // Use Google Docs Viewer
+    // This forces ANY file (Raw PDF, Docx, etc.) to render in the browser
+    const googleViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(resumeUrl)}&embedded=true`;
+    
+    window.open(googleViewerUrl, "_blank");
   };
 
   return (
