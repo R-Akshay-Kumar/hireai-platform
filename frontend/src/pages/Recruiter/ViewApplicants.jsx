@@ -66,6 +66,10 @@ const ViewApplicants = () => {
       .replace("/upload/fl_attachment/", "/upload/")
       .replace("/upload/fl_inline/", "/upload/");
     
+    if (!cleanUrl.toLowerCase().endsWith(".pdf")) {
+      cleanUrl += ".pdf";
+    }
+    
     window.open(cleanUrl, "_blank");
   };
 
