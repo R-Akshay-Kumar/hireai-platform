@@ -62,11 +62,11 @@ const ViewApplicants = () => {
       return;
     }
 
-    // Use Google Docs Viewer
-    // This forces ANY file (Raw PDF, Docx, etc.) to render in the browser
-    const googleViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(resumeUrl)}&embedded=true`;
+    let cleanUrl = resumeUrl
+      .replace("/upload/fl_attachment/", "/upload/")
+      .replace("/upload/fl_inline/", "/upload/");
     
-    window.open(googleViewerUrl, "_blank");
+    window.open(cleanUrl, "_blank");
   };
 
   return (
