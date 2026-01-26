@@ -22,7 +22,6 @@ const ViewApplicants = () => {
 
   const handleUpdateStatus = async (applicantId, newStatus) => {
     try {
-      // <--- 2. UPDATED: API.put() with relative path
       await API.put(
         `/jobs/${id}/applicant/${applicantId}/status`,
         { status: newStatus }
@@ -42,7 +41,6 @@ const ViewApplicants = () => {
 
   const fetchApplicants = async () => {
     try {
-      // <--- 3. UPDATED: API.get() calls
       // 1. Get Job Details (for Title)
       const jobRes = await API.get(`/jobs/${id}`);
       setJobTitle(jobRes.data.title);
@@ -57,11 +55,16 @@ const ViewApplicants = () => {
     }
   };
 
-  const handleDownloadResume = (resumeUrl) => {
-    // <--- 4. UPDATED: Cloudinary returns a full URL, so we just open it directly
+  // --- UPDATED FUNCTION TO VIEW RESUME IN NEW TAB ---
+  const handleViewResume = (resumeUrl) => {
     if (resumeUrl) {
-      const viewUrl = resumeUrl.replace("/upload/", "/upload/fl_inline,f_auto/");
-      window.open(resumeUrl, "_blank");
+      // Cloudinary Trick: 
+      // Replace "/upload/" with "/upload/fl_inline/"
+      // 'fl_inline' forces the browser to try and display the PDF instead of downloading it.
+      const viewUrl = resumeUrl.replace("/upload/", "/upload/fl_inline/");
+      
+      // Open the MODIFIED url, not the original one
+      window.open(viewUrl, "_blank");
     } else {
       alert("Resume URL not found");
     }
@@ -159,7 +162,8 @@ const ViewApplicants = () => {
                     {/* 4. Resume */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
-                        onClick={() => handleDownloadResume(app.resumeUrl)}
+                        // Use the new handler here
+                        onClick={() => handleViewResume(app.resumeUrl)}
                         className="text-indigo-600 hover:text-indigo-900 font-medium flex items-center gap-2"
                       >
                         <FaFilePdf /> View Resume
